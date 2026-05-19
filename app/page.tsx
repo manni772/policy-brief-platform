@@ -55,7 +55,8 @@ export default function Home() {
           {topics.map(topic => (
             <Link
               key={topic.title}
-              href={`/dashboard/generate?topic=${encodeURIComponent(topic.title)}`}
+              href={`/login?redirect=${encodeURIComponent(`/dashboard/generate?topic=${encodeURIComponent(topic.title)}`)}`}
+            
               className="bg-white rounded-xl border border-gray-200 p-5 hover:border-green-400 hover:shadow-sm transition block"
             >
               <div className="flex items-center justify-between mb-3">
