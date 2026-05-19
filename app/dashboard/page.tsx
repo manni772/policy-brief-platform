@@ -26,12 +26,12 @@ export default function Dashboard() {
 
   const deleteBrief = async (id: string) => {
     await supabase.from('briefs').delete().eq('id', id)
-    setBriefs(briefs.filter(b => b.id !== id))
+    setBriefs(prev => prev.filter(b => b.id !== id))
   }
 
   const togglePublic = async (id: string, isPublic: boolean) => {
     await supabase.from('briefs').update({ is_public: !isPublic }).eq('id', id)
-    setBriefs(briefs.map(b => b.id === id ? { ...b, is_public: !isPublic } : b))
+    setBriefs(prev => prev.map(b => b.id === id ? { ...b, is_public: !isPublic } : b))
   }
 
   const signOut = async () => {
@@ -49,7 +49,7 @@ export default function Dashboard() {
           <p className="text-green-300 text-xs mt-1">Tax & social policy tools for Aotearoa</p>
         </div>
         <div className="flex items-center gap-4">
-          <span className="text-green-300 text-sm">{user.email}</span>
+          <span className="text-green-300 text-sm">{user?.email}</span>
           <button onClick={signOut} className="text-white text-sm px-4 py-2 rounded border border-green-600 hover:bg-green-800">
             Sign out
           </button>
@@ -70,9 +70,7 @@ export default function Dashboard() {
         {briefs.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
             <div className="text-4xl mb-4">📄</div>
-            <Link href={`/dashboard/brief/${brief.id}`} className="font-semibold text-gray-900 mb-1 hover:text-green-800 hover:underline">
-  {brief.title}
-</Link>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No briefs yet</h3>
             <p className="text-gray-500 text-sm mb-6">Generate your first AI-powered policy brief</p>
             <Link href="/dashboard/generate" className="bg-green-900 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-green-800 transition text-sm">
               Generate first brief →
@@ -87,7 +85,9 @@ export default function Dashboard() {
                     <span className="text-xs text-gray-400">{new Date(brief.created_at).toLocaleDateString('en-NZ', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
                     {brief.is_public && <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Public</span>}
                   </div>
-                  <h3 className="font-semibold text-gray-900 mb-1">{brief.title}</h3>
+                  <Link href={`/dashboard/brief/${brief.id}`} className="font-semibold text-gray-900 hover:text-green-800 hover:underline block mb-1">
+                    {brief.title}
+                  </Link>
                   <p className="text-sm text-gray-500">{brief.topic}</p>
                 </div>
                 <div className="flex gap-2 flex-shrink-0">
