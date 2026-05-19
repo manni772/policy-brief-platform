@@ -70,7 +70,9 @@ export default function Dashboard() {
         {briefs.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
             <div className="text-4xl mb-4">📄</div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No briefs yet</h3>
+            <Link href={`/dashboard/brief/${brief.id}`} className="font-semibold text-gray-900 mb-1 hover:text-green-800 hover:underline">
+  {brief.title}
+</Link>
             <p className="text-gray-500 text-sm mb-6">Generate your first AI-powered policy brief</p>
             <Link href="/dashboard/generate" className="bg-green-900 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-green-800 transition text-sm">
               Generate first brief →
@@ -105,4 +107,4 @@ export default function Dashboard() {
       </div>
     </div>
   )
-}
+}git add .
