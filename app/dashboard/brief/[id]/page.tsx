@@ -11,15 +11,17 @@ export default function BriefDetail({ params }: { params: { id: string } }) {
   const router = useRouter()
 
   useEffect(() => {
-    supabase.auth.getUser().then(async ({ data }) => {
-      if (!data.user) { router.push('/login'); return }
+    supabase.auth.getSession().then(async ({ data: sessionData }) => {
+      if (!sessionData.session) { router.push('/login'); return }
+      
       const { data: brief, error } = await supabase
         .from('briefs')
         .select('*')
         .eq('id', params.id)
         .maybeSingle()
+      
       if (error || !brief) {
-        setError('Brief not found. It may have been deleted or you may not have access.')
+        setError(`Brief not found. Error: ${error?.message || 'No data returned'}`)
         setLoading(false)
         return
       }
