@@ -1,98 +1,56 @@
-'use client'
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
 import Link from 'next/link'
+import { notFound } from 'next/navigation'
 
-export default function BriefDetail({ params }: { params: Promise<{ id: string }> }) {
-  const [id, setId] = useState<string>('')
-  const [brief, setBrief] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const router = useRouter()
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
-  useEffect(() => {
-    Promise.resolve(params).then(({ id }) => {
-      setId(id)
-      supabase.auth.getSession().then(async ({ data: sessionData }) => {
-        if (!sessionData.session) { router.push('/login'); return }
-        const { data: brief, error } = await supabase
-          .from('briefs')
-          .select('*')
-          .eq('id', id)
-          .maybeSingle()
-        if (error || !brief) {
-          setError(`Brief not found. Error: ${error?.message || 'No data'}`)
-          setLoading(false)
-          return
-        }
-        setBrief(brief)
-        setLoading(false)
-      })
-    })
-  }, [])
+export default async function PublicBrief({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
 
-  const togglePublic = async () => {
-    const { error } = await supabase
-      .from('briefs')
-      .update({ is_public: !brief.is_public })
-      .eq('id', brief.id)
-    if (!error) setBrief({ ...brief, is_public: !brief.is_public })
-  }
+  const { data: brief } = await supabase
+    .from('briefs')
+    .select('*')
+    .eq('id', id)
+    .eq('is_public', true)
+    .maybeSingle()
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-gray-500">Loading brief...</div>
-  if (error) return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-      <p className="text-red-500">{error}</p>
-      <Link href="/dashboard" className="text-green-700 hover:underline text-sm">← Back to dashboard</Link>
-    </div>
-  )
+  if (!brief) notFound()
 
   const c = brief.content
 
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-green-900 border-b-4 border-yellow-600 px-8 py-4 flex items-center justify-between">
-        <Link href="/dashboard" className="text-white font-bold text-xl">🌿 NZ Policy Brief Platform</Link>
-        <Link href="/dashboard" className="text-white text-sm px-4 py-2 rounded border border-green-600 hover:bg-green-800">
-          ← My briefs
-        </Link>
+        <Link href="/" className="text-white font-bold text-xl">🌿 NZ Policy Brief Platform</Link>
+        <div className="flex gap-3">
+          <Link href="/login" className="text-white text-sm px-4 py-2 rounded border border-green-600 hover:bg-green-800">Sign in</Link>
+          <Link href="/signup" className="text-white text-sm px-4 py-2 rounded bg-yellow-600 hover:bg-yellow-700">Sign up free</Link>
+        </div>
       </nav>
 
       <div className="max-w-3xl mx-auto px-8 py-10">
-        <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
-          <div>
-            <div className="text-xs text-gray-400 mb-2">
-              {new Date(brief.created_at).toLocaleDateString('en-NZ', { day: 'numeric', month: 'long', year: 'numeric' })}
-              {brief.is_public && <span className="ml-2 bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium text-xs">Public</span>}
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900">{c?.title}</h1>
+        <div className="bg-green-50 border border-green-200 rounded-xl px-6 py-4 mb-6 flex items-center justify-between flex-wrap gap-3">
+          <p className="text-sm text-green-800">This policy brief was generated using AI and shared publicly.</p>
+          <Link href="/signup" className="text-sm font-semibold text-green-900 hover:underline">Generate your own →</Link>
+        </div>
+
+        <div className="mb-6">
+          <div className="text-xs text-gray-400 mb-2">
+            {new Date(brief.created_at).toLocaleDateString('en-NZ', { day: 'numeric', month: 'long', year: 'numeric' })}
           </div>
-          <div className="flex gap-2 flex-wrap">
-            <button onClick={togglePublic} className="text-sm px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition">
-              {brief.is_public ? 'Make private' : 'Make public'}
-            </button>
-            {brief.is_public && (
-              <button onClick={() => {
-                navigator.clipboard.writeText(`${window.location.origin}/briefs/${brief.id}`)
-                alert('Share link copied!')
-              }} className="text-sm px-4 py-2 rounded-lg border border-green-700 text-green-700 hover:bg-green-50 transition">
-                Copy share link
-              </button>
-            )}
-            <button onClick={() => window.print()} className="text-sm px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition">
-              Export PDF
-            </button>
-          </div>
+          <h1 className="text-2xl font-bold text-gray-900">{c.title}</h1>
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 p-8">
           {[
-            { label: 'Problem definition', content: c?.problemDefinition },
-            { label: 'Current policy settings', content: c?.currentSettings },
-            { label: 'Analysis', content: c?.analysis },
-            { label: 'Recommendation', content: c?.recommendation },
-            { label: 'Next steps', content: c?.nextSteps },
+            { label: 'Problem definition', content: c.problemDefinition },
+            { label: 'Current policy settings', content: c.currentSettings },
+            { label: 'Analysis', content: c.analysis },
+            { label: 'Recommendation', content: c.recommendation },
+            { label: 'Next steps', content: c.nextSteps },
           ].map(s => s.content && (
             <div key={s.label} className="mb-6 pb-6 border-b border-gray-100 last:border-0 last:mb-0">
               <div className="text-xs font-bold uppercase tracking-widest text-green-800 mb-2">{s.label}</div>
@@ -100,7 +58,7 @@ export default function BriefDetail({ params }: { params: Promise<{ id: string }
             </div>
           ))}
 
-          {c?.options && (
+          {c.options && (
             <div>
               <div className="text-xs font-bold uppercase tracking-widest text-green-800 mb-3">Policy options</div>
               {c.options.map((opt: any, i: number) => (
