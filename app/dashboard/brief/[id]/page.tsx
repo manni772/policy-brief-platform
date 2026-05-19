@@ -4,31 +4,33 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 
-export default function BriefDetail({ params }: { params: { id: string } }) {
+export default function BriefDetail({ params }: { params: Promise<{ id: string }> }) {
+  const [id, setId] = useState<string>('')
   const [brief, setBrief] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const router = useRouter()
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: sessionData }) => {
-      if (!sessionData.session) { router.push('/login'); return }
-      
-      const { data: brief, error } = await supabase
-        .from('briefs')
-        .select('*')
-        .eq('id', params.id)
-        .maybeSingle()
-      
-      if (error || !brief) {
-        setError(`Brief not found. Error: ${error?.message || 'No data returned'}`)
+    Promise.resolve(params).then(({ id }) => {
+      setId(id)
+      supabase.auth.getSession().then(async ({ data: sessionData }) => {
+        if (!sessionData.session) { router.push('/login'); return }
+        const { data: brief, error } = await supabase
+          .from('briefs')
+          .select('*')
+          .eq('id', id)
+          .maybeSingle()
+        if (error || !brief) {
+          setError(`Brief not found. Error: ${error?.message || 'No data'}`)
+          setLoading(false)
+          return
+        }
+        setBrief(brief)
         setLoading(false)
-        return
-      }
-      setBrief(brief)
-      setLoading(false)
+      })
     })
-  }, [params.id])
+  }, [])
 
   const togglePublic = async () => {
     const { error } = await supabase
