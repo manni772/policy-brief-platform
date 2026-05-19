@@ -1,10 +1,10 @@
 'use client'
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 
-export default function Generate() {
+function GenerateContent() {
   const [user, setUser] = useState<any>(null)
   const [topic, setTopic] = useState('')
   const [loading, setLoading] = useState(false)
@@ -13,10 +13,17 @@ export default function Generate() {
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   useEffect(() => {
+    const topicFromUrl = searchParams.get('topic')
+    if (topicFromUrl) setTopic(topicFromUrl)
+
     supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) { router.push('/login'); return }
+      if (!data.user) {
+        router.push(`/login?redirect=/dashboard/generate${topicFromUrl ? `?topic=${encodeURIComponent(topicFromUrl)}` : ''}`)
+        return
+      }
       setUser(data.user)
     })
   }, [])
@@ -169,5 +176,13 @@ Return your response as a JSON object with EXACTLY this structure (no markdown, 
         )}
       </div>
     </div>
+  )
+}
+
+export default function Generate() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-gray-500">Loading...</div>}>
+      <GenerateContent />
+    </Suspense>
   )
 }
